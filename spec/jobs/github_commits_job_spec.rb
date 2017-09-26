@@ -10,6 +10,7 @@ describe GithubCommitsJob do
       @project = FactoryGirl.create(:project)
       @project.source_repositories.create(url: 'https://github.com/AgileVentures/WebsiteOne')
       @project_without_url = FactoryGirl.create(:project)
+      @project_with_empty_repo = FactoryGirl.create(:project, github_url: 'https://github.com/AgileVentures/empty_project')
       @users_with_github_profile_urls = [
         FactoryGirl.create(:user, github_profile_url: 'https://github.com/tochman'),
       ]
