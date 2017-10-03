@@ -2,6 +2,7 @@ require 'octokit'
 
 module GithubCommitsJob
   extend self
+  MAX_RETRY_COUNT = 3
 
   def initialize
     @client ||= Octokit::Client.new(:client_id => Settings.github.client_id, :client_secret => Settings.github.client_secret)
@@ -9,6 +10,7 @@ module GithubCommitsJob
 
   def run
     initialize
+    byebug
     Project.with_github_url.each do |project|
       update_total_commit_count_for(project)
       update_user_commit_counts_for(project)
@@ -18,6 +20,7 @@ module GithubCommitsJob
   private
 
   def update_total_commit_count_for(project)
+    byebug
     begin
       commit_count = client.contributors(github_url(project), true, per_page: 100).reduce(0) do |memo, contrib|
         memo += contrib.contributions
@@ -55,11 +58,14 @@ module GithubCommitsJob
     end
 
   def get_contributor_stats(repo)
+    retry_count = 1
     loop do
+      return [] if retry_number >= MAX_RETRY_COUNT
       contributors = client.contributor_stats(repo)
       return contributors unless contributors.nil?
       Rails.logger.warn "Waiting for Github to calculate project statistics for #{repo}"
       sleep 3
+      retry_count += 1
     end
   end
 
